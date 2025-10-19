@@ -34,7 +34,7 @@ namespace Assessment.Tests {
             actual.Should().Be(-1);
         }
 
-        [Fact(DisplayName = "Should correctly handle int.MinValue as the largest number")]
+        [Fact(DisplayName = "Should correctly handle int.MinValue as the second largest number")]
         public void FindSecondLargest_ShouldHandleMinValueAsLargest() {
             var input = new List<int> { int.MinValue, int.MinValue + 1 };
 
@@ -84,7 +84,7 @@ namespace Assessment.Tests {
                 .WithMessage("The collection must contain at least two distinct numbers.");
         }
 
-        [Fact(DisplayName = "Should throw exception when array has only two distinct numbers but one is maxvalue")]
+        [Fact(DisplayName = "Should throw exception when array has only one number total")]
         public void FindSecondLargest_ShouldThrowException_WhenArrayHasOnlyOneTotalNumber() {
             var input = new List<int> { 42 };
 
