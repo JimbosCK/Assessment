@@ -1,4 +1,5 @@
-﻿using Assessment.Models;
+﻿using Assessment.Exceptions;
+using Assessment.Models;
 using Assessment.Services;
 using Microsoft.AspNetCore.Mvc;
 
