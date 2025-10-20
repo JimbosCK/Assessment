@@ -1,4 +1,7 @@
+using Assessment.EF.Context;
+using Assessment.EF.Repositories;
 using Assessment.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,10 +12,17 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IMathService, MathService>();
 builder.Services.AddScoped<IExternalCountryService, ExternalCountryService>();
+builder.Services.AddScoped<CountryRepo>();
 
 builder.Services.AddHttpClient<IExternalCountryService, ExternalCountryService>(client => {
     client.BaseAddress = new Uri("https://restcountries.com/v3.1/");
 });
+
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<AssessmentDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
 
 var app = builder.Build();
 

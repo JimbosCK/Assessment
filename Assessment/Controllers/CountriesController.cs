@@ -1,4 +1,5 @@
 ﻿using Assessment.Dtos;
+using Assessment.EF.Repositories;
 using Assessment.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +9,11 @@ namespace Assessment.Controllers {
     [ApiController]
     public class CountriesController : ControllerBase {
         private readonly IExternalCountryService _countryService;
+        private readonly CountryRepo _countryRepo;
 
-        public CountriesController(IExternalCountryService countryService) {
+        public CountriesController(IExternalCountryService countryService, CountryRepo countryRepo) {
             _countryService = countryService;
+            _countryRepo = countryRepo;
         }
 
         /// <summary>
@@ -21,10 +24,26 @@ namespace Assessment.Controllers {
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllCountries() {
             try {
-                var countries = await _countryService.GetAllCountriesAsync();
+                var dbCountries = await _countryRepo.GetAllAsync();
+                IEnumerable<CountryResponseDto> countriesToReturn;
 
-                return Ok(countries);
-            } catch (HttpRequestException) {
+                if (dbCountries == null || !dbCountries.Any()) {
+
+                    var apiDtos = await _countryService.GetAllCountriesAsync();
+                    var countryEntities = apiDtos.ToCountryEntities();
+
+                    await _countryRepo.SaveCountriesAsync(countryEntities);
+
+                    countriesToReturn = apiDtos;
+                } else {
+
+                    countriesToReturn = dbCountries.ToCountryResponseDtos();
+                }
+
+                return Ok(countriesToReturn);
+            }
+    // ... (Exception handling remains the same) ...
+    catch (HttpRequestException) {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable,
                     "The third-party country API is currently unavailable.");
             } catch (Exception) {
