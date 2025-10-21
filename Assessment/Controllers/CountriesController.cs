@@ -10,10 +10,12 @@ namespace Assessment.Controllers {
     public class CountriesController : ControllerBase {
         private readonly IExternalCountryService _countryService;
         private readonly CountryRepo _countryRepo;
+        private readonly ICountryCache _countryCache;
 
-        public CountriesController(IExternalCountryService countryService, CountryRepo countryRepo) {
+        public CountriesController(IExternalCountryService countryService, CountryRepo countryRepo, ICountryCache countryCache) {
             _countryService = countryService;
             _countryRepo = countryRepo;
+            _countryCache = countryCache;
         }
 
         /// <summary>
@@ -24,26 +26,38 @@ namespace Assessment.Controllers {
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllCountries() {
             try {
-                var dbCountries = await _countryRepo.GetAllAsync();
-                IEnumerable<CountryResponseDto> countriesToReturn;
-
-                if (dbCountries == null || !dbCountries.Any()) {
-
-                    var apiDtos = await _countryService.GetAllCountriesAsync();
-                    var countryEntities = apiDtos.ToCountryEntities();
-
-                    await _countryRepo.SaveCountriesAsync(countryEntities);
-
-                    countriesToReturn = apiDtos;
-                } else {
-
-                    countriesToReturn = dbCountries.ToCountryResponseDtos();
+                var cachedCountries = _countryCache.GetCountries();
+                //  Cache Hit
+                if (cachedCountries != null && cachedCountries.Any()) {
+                    return Ok(cachedCountries);
                 }
 
-                return Ok(countriesToReturn);
-            }
-    // ... (Exception handling remains the same) ...
-    catch (HttpRequestException) {
+                //  Cache Miss
+                var dbEntities = await _countryRepo.GetAllAsync();
+                if (dbEntities != null && dbEntities.Any()) {
+                    var cacheDtos = dbEntities.ToCountryResponseDtos().ToList();
+                    _countryCache.SetCountries(cacheDtos);
+
+                    var responseFromDb = dbEntities.ToCountryResponseDtos();
+                    return Ok(responseFromDb);
+                }
+
+                //  Both Cache and DB Miss
+                var apiDtos = await _countryService.GetAllCountriesAsync();
+
+                if (apiDtos == null || !apiDtos.Any()) {
+                    return NotFound("No country data available from the external source.");
+                }
+
+                //  Save to DB
+                var countryEntities = apiDtos.ToCountryEntities();
+                await _countryRepo.SaveCountriesAsync(countryEntities);
+
+                //  Save to Cache
+                _countryCache.SetCountries(apiDtos.ToList());
+
+                return Ok(apiDtos);
+            } catch (HttpRequestException) {
                 return StatusCode(StatusCodes.Status503ServiceUnavailable,
                     "The third-party country API is currently unavailable.");
             } catch (Exception) {

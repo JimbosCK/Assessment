@@ -5,14 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IMathService, MathService>();
 builder.Services.AddScoped<IExternalCountryService, ExternalCountryService>();
 builder.Services.AddScoped<CountryRepo>();
+
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICountryCache, MemoryCountryCache>();
 
 builder.Services.AddHttpClient<IExternalCountryService, ExternalCountryService>(client => {
     client.BaseAddress = new Uri("https://restcountries.com/v3.1/");
@@ -30,8 +31,6 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// Configure the HTTP request pipeline.
 
 app.UseHttpsRedirection();
 

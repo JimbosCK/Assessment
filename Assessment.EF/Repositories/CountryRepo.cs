@@ -11,7 +11,9 @@ namespace Assessment.EF.Repositories {
         }
 
         public async Task<IEnumerable<Country>> GetAllAsync() {
-            return await _context.Countries.ToListAsync();
+            return await _context.Countries
+                .Include(c => c.Borders)
+                .ToListAsync();
         }
 
         public async Task SaveCountriesAsync(IEnumerable<Country> countries) {
