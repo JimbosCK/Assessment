@@ -14,9 +14,8 @@ builder.Services.AddScoped<CountryRepo>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICountryCache, MemoryCountryCache>();
-
 builder.Services.AddHttpClient<IExternalCountryService, ExternalCountryService>(client => {
-    client.BaseAddress = new Uri("https://restcountries.com/v3.1/");
+    client.BaseAddress = new Uri(builder.Configuration.GetSection("ExternalApis:RestCountriesBaseUrl").Value);
 });
 
 
