@@ -91,10 +91,7 @@ GET /api/Countries/All
             "PER"
         ]
     },
-    .
-    .
-    .
-    }
+    
 ]
 ```
 
